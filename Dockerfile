@@ -14,7 +14,6 @@ RUN apt update
 RUN apt install -y cloudstack-common cloudstack-management cloudstack-usage
 RUN locale-gen en_US.UTF-8
 
-RUN mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'porcupinetreevoyage34' "
 
 # Expose ports
 EXPOSE 8080
