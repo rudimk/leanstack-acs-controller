@@ -10,8 +10,10 @@ RUN apt install -y curl openssh-server genisoimage nfs-common python3-pip python
 
 ADD cloudstack-common.deb /root/
 ADD cloudstack-management.deb /root/
+ADD cloudstack-usage.deb /root/
 RUN dpkg -i /root/cloudstack-common.deb
 RUN dpkg -i /root/cloudstack-management.deb
+RUN dpkg -i /root/cloudstack-usage.deb
 RUN locale-gen en_US.UTF-8
 
 # Expose ports
