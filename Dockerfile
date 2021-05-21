@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM jrei/systemd-ubuntu:18.04
 MAINTAINER "Rudi MK <rudraksh@indiqus.com>"
 LABEL Vendor="IndiQus" License="ApacheV2" Version="0.1.0"
 
