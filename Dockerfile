@@ -20,3 +20,4 @@ EXPOSE 8080
 EXPOSE 8250
 EXPOSE 9090
 
+CMD ["/usr/sbin/init"]
