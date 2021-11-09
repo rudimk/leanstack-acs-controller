@@ -2,3 +2,7 @@
 *.vagrant
 *.log
 *.env
+*.tfstate*
+*.terraform*
+ansible/inventory
+ansible/output/*
