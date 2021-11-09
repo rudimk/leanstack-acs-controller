@@ -1,0 +1,15 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloudstack-db-setup
+  namespace: cloudstack
+spec:
+  template:
+    spec:
+      containers:
+      - name: cloudstack-db-setup
+        image: rudester/cloudstack-controller:v0.1.0-rc1
+        command: ["cloudstack-setup-databases", "cloud:foobar@mysql-primary-headless.mysql", "--deploy-as=root:foobar"]
+      restartPolicy: Never
+  backoffLimit: 4
