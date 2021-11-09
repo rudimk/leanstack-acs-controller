@@ -1,0 +1,80 @@
+---
+- hosts: k3s_masters
+  become: true
+  tasks:
+    - name: Configure hostnames
+      hostname:
+        name: "{{hostname}}"
+    - name: Update package repos and install MySQL 5.7
+      apt:
+        name: mysql-server
+        state: present
+        update_cache: yes
+    - name: Update the MySQL root user's password
+      command: mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}'"
+    - name: Grant remote access rights to the MySQL root user
+      command: mysql -uroot -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{mysql_root_password}}'" -p{{mysql_root_password}}
+    - name: Allow MySQL to listen on all hosts
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address'
+        line: bind-address  = 0.0.0.0
+    - name: Restart MySQL
+      ansible.builtin.systemd:
+        name: mysql
+        state: restarted
+    - name: Create K3s cluster database
+      command: mysql -uroot -e "CREATE DATABASE k3s" -p{{mysql_root_password}}
+
+- hosts: k3s_masters
+  become: true
+  environment:
+    KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+    INSTALL_K3S_VERSION: v1.20.6+k3s1
+  tasks:
+    - name: Configure hostname
+      hostname:
+        name: "{{hostname}}"
+    - name: Install pip3
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+    - name: Install the Python 3 OpenShift client
+      pip:
+        name: openshift
+    - name: Run the k3sInstaller script
+      ansible.builtin.script: k3sInstaller.sh server --datastore-endpoint="mysql://root:{{mysql_root_password}}@tcp({{mysql_address}}:3306)/k3s" --tls-san "{{inventory_hostname}}"
+    - name: Copy the kubeconfig file
+      ansible.builtin.copy:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /etc/rancher/k3s/k3s.yaml.clone
+        remote_src: yes
+    - name: Modify the Kubernetes API endpoint in the cloned kubeconfig
+      lineinfile:
+        path: /etc/rancher/k3s/k3s.yaml.clone
+        regexp: '^    server:'
+        line: "    server: https://{{inventory_hostname}}:6443"
+    - name: Fetch the cluster's kubeconfig
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml.clone
+        dest: output/{{ hostname }}-kubeconfig.yaml
+        flat: yes
+    - name: Read the cluster's agent token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: node_token
+
+- hosts: k3s_workers
+  become: true
+  environment:
+    K3S_URL: "https://{{hostvars[groups['k3s_masters'][0]]['inventory_hostname']}}:6443"
+    K3S_TOKEN: "{{hostvars[groups['k3s_masters'][0]]['node_token']['content'] | b64decode}}"
+    INSTALL_K3S_VERSION: v1.20.6+k3s1
+  tasks:
+    - name: Configure hostname
+      hostname:
+        name: "{{hostname}}"
+    - name: Run the k3sInstaller script and register node as a worker
+      ansible.builtin.script: k3sInstaller.sh
+
