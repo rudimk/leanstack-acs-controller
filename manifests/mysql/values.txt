@@ -1,0 +1,14 @@
+image.tag: 5.7.35
+architecture: replication
+primary.persistence.enabled: true
+primary.persistence.storageClass: longhorn
+primary.persistence.size: 8Gi
+primary.service.type: ClusterIP
+secondary.replicaCount: 2
+secondary.persistence.enabled: true
+secondary.persistence.storageClass: longhorn
+secondary.persistence.size: 8Gi
+secondary.service.type: ClusterIP
+auth.rootPassword: porcupinetreevoyage34
+auth.replicationUser: replicator
+auth.replicationPassword: porcupinetreevoyage34
